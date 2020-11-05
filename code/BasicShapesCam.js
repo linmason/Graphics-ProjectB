@@ -100,10 +100,10 @@ function main() {
 	var currentAngle = 0.0;
 
 	// Initialize eye position
-	var eye_position = [0, 0, 1];
+	var eye_position = [1, 0, 1];
 
 	// Initialize look at position
-	var lookat_position = [0, 1, 1];
+	var lookat_position = [1, 1, 1];
 
 	// Start drawing: create 'tick' variable whose value is this function:
 	var tick = function() {
@@ -749,6 +749,8 @@ function updateCameraPositions(eye_position, lookat_position) {
 		eye_position[i] += displacement[i];
 		lookat_position[i] += displacement[i];
 	}
+
+
 
 	console.log(eye_position);
 	console.log(lookat_position);
