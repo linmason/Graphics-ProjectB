@@ -45,6 +45,10 @@ var floatsPerVertex = 7;	// # of Float32Array elements used for each vertex
 													// (x,y,z,w)position + (r,g,b)color
 													// Later, see if you can add:
 													// (x,y,z) surface normal + (tx,ty) texture addr.
+var g_angle01 = 0;
+var g_angle01Rate = 100;
+var g_angle01min = -180;
+var g_angle01max = 180;
 
 
 function main() {
@@ -118,10 +122,15 @@ function initVertexBuffer(gl) {
 	makeSphere();						// create, fill the sphVerts array
 	makeTorus();						// create, fill the torVerts array
 	makeGroundGrid();				// create, fill the gndVerts array
+	makeHouse();
+	makeDiamond();
+	makePyramid();
+	makeAxes();
 	  
 	// how many floats total needed to store all shapes?
 	var mySiz = (cylVerts.length + sphVerts.length + 
-							 torVerts.length + gndVerts.length);						
+							 torVerts.length + gndVerts.length + houseVerts.length + diamondVerts.length
+							 + pyramidVerts.length + axesVerts.length);						
 
 	// How many vertices total?
 	var nn = mySiz / floatsPerVertex;
@@ -148,6 +157,27 @@ function initVertexBuffer(gl) {
 	for(j=0; j< gndVerts.length; i++, j++) {
 		colorShapes[i] = gndVerts[j];
 		}
+
+	houseStart = i;						// next we'll store the ground-plane;
+	for(j=0; j< houseVerts.length; i++, j++) {
+		colorShapes[i] = houseVerts[j];
+		}
+
+	diamondStart = i;						// next we'll store the ground-plane;
+	for(j=0; j< diamondVerts.length; i++, j++) {
+		colorShapes[i] = diamondVerts[j];
+		}
+
+	pyramidStart = i;						// next we'll store the ground-plane;
+	for(j=0; j< pyramidVerts.length; i++, j++) {
+		colorShapes[i] = pyramidVerts[j];
+		}
+		
+	axesStart = i;						// next we'll store the ground-plane;
+	for(j=0; j< axesVerts.length; i++, j++) {
+		colorShapes[i] = axesVerts[j];
+		}
+
 
 	// Create a buffer object on the graphics hardware:
 	var shapeBufferHandle = gl.createBuffer();  
@@ -218,15 +248,159 @@ function initVertexBuffer(gl) {
 function makeDiamond() {
 //==============================================================================
 // Make a diamond-like shape from two adjacent tetrahedra, aligned with Z axis.
+diamondVerts = new Float32Array([
 
+// Triangle 1
+	0.0, 0.0, 0.0, 1.0,			1.0, 1.0, 1.0,		//Node 1
+	0.25, 0.5, 0.0, 1.0,		0.0, 0.0, 1.0,		//Node 2
+	0.0, 0.5, -0.25, 1.0,		1.0, 1.0, 0.0,		//Node 5
+
+	// Triangle 2 
+	0.0, 0.0, 0.0, 1.0,			1.0, 1.0, 1.0,		//Node 1
+	-0.25, 0.5, 0.0, 1.0,		1.0, 0.0, 0.0,		//Node 4
+	0.0, 0.5, -0.25, 1.0,		1.0, 1.0, 0.0,		//Node 5
+
+	// Triangle 3
+	0.0, 0.0, 0.0, 1.0,			1.0, 1.0, 1.0,		//Node 1
+	0.0, 0.5, 0.25, 1.0,		0.0, 1.0, 0.0,		//Node 3
+	-0.25, 0.5, 0.0, 1.0,		1.0, 0.0, 0.0,		//Node 4
+
+	// Triangle 4
+	0.0, 0.0, 0.0, 1.0,			1.0, 1.0, 1.0,		//Node 1
+	0.25, 0.5, 0.0, 1.0,		0.0, 0.0, 1.0,		//Node 2
+	0.0, 0.5, 0.25, 1.0,		0.0, 1.0, 0.0,		//Node 3
+
+	// Triangle 5
+	0.0, 1.0, 0.0, 1.0,			0.0, 0.0, 0.0,		//Node 0
+	0.25, 0.5, 0.0, 1.0,		0.0, 0.0, 1.0,		//Node 2
+	0.0, 0.5, -0.25, 1.0,		1.0, 1.0, 0.0,		//Node 5
+
+	// Triangle 6
+	0.0, 1.0, 0.0, 1.0,			0.0, 0.0, 0.0,		//Node 0
+	-0.25, 0.5, 0.0, 1.0,		1.0, 0.0, 0.0,		//Node 4
+	0.0, 0.5, -0.25, 1.0,		1.0, 1.0, 0.0,		//Node 5
+
+	// Triangle 7
+	0.0, 1.0, 0.0, 1.0,			0.0, 0.0, 0.0,		//Node 0
+	0.0, 0.5, 0.25, 1.0,		0.0, 1.0, 0.0,		//Node 3
+	-0.25, 0.5, 0.0, 1.0,		1.0, 0.0, 0.0,		//Node 4
+
+	// Triangle 8
+	0.0, 1.0, 0.0, 1.0,			0.0, 0.0, 0.0,		//Node 0
+	0.25, 0.5, 0.0, 1.0,		0.0, 0.0, 1.0,		//Node 2
+	0.0, 0.5, 0.25, 1.0,		0.0, 1.0, 0.0,		//Node 3
+
+])
 	// YOU write this one...
 	
+}
+
+function makeHouse() {
+houseVerts = new Float32Array([ 
+	// Triangle 1
+     -0.5, -0.5, 0.5,1.0,		0.0, 0.0, 1.0,		//Node F
+     -0.5, 0.5, 0.5,1.0,		1.0, 0.0, 0.0,		//Node A
+     0.5, 0.5, 0.5,	1.0,		0.0, 1.0, 0.0,		//Node B
+
+     // Triangle 2
+     -0.5, -0.5, 0.5,1.0,		0.0, 0.0, 1.0,		//Node F
+     0.5, -0.5, 0.5,1.0,		1.0, 1.0, 0.0,		//Node G
+     0.5, 0.5, 0.5,	1.0,		0.0, 1.0, 0.0,		//Node B
+
+     // Triangle 3
+     -0.5, -0.5, -0.5,1.0,		0.0, 1.0, 0.0,		//Node I
+     -0.5, 0.5, -0.5,1.0,		1.0, 1.0, 0.0,		//Node D
+     0.5, 0.5, -0.5,1.0,		0.0, 0.0, 1.0,		//Node C
+
+     // Triangle 4
+     -0.5, -0.5, -0.5,1.0,		0.0, 1.0, 0.0,		//Node I
+     0.5, -0.5, -0.5,1.0,		1.0, 0.0, 0.0,		//Node H
+     0.5, 0.5, -0.5,1.0,		0.0, 0.0, 1.0,		//Node C
+
+     // Triangle 5
+     -0.5, -0.5, 0.5,1.0,		0.0, 0.0, 1.0,		//Node F
+     -0.5, -0.5, -0.5,1.0,		0.0, 1.0, 0.0,		//Node I
+     0.5, -0.5, -0.5,1.0,		1.0, 0.0, 0.0,		//Node H
+
+     // Triangle 6
+     -0.5, -0.5, 0.5,1.0,		0.0, 0.0, 1.0,		//Node F
+     0.5, -0.5, 0.5,1.0,		1.0, 1.0, 0.0,		//Node G
+     0.5, -0.5, -0.5,1.0,		1.0, 0.0, 0.0,		//Node H
+
+     // Triangle 7
+     -0.5, -0.5, 0.5,1.0,		0.0, 0.0, 1.0,		//Node F
+     -0.5, 0.5, 0.5,1.0,		1.0, 0.0, 0.0,		//Node A
+     -0.5, 0.5, -0.5,1.0,		1.0, 1.0, 0.0,		//Node D
+
+     // Triangle 8
+     -0.5, -0.5, 0.5,1.0,		0.0, 0.0, 1.0,		//Node F
+     -0.5, -0.5, -0.5,1.0,		0.0, 1.0, 0.0,		//Node I
+     -0.5, 0.5, -0.5,1.0,		1.0, 1.0, 0.0,		//Node D
+
+     // Triangle 9
+     0.5, -0.5, 0.5,1.0,		1.0, 1.0, 0.0,		//Node G
+     0.5, 0.5, 0.5,	1.0,		0.0, 1.0, 0.0,		//Node B
+     0.5, 0.5, -0.5,1.0,		0.0, 0.0, 1.0,		//Node C
+
+     // Triangle 10
+     0.5, -0.5, 0.5,1.0,		1.0, 1.0, 0.0,		//Node G
+     0.5, -0.5, -0.5,1.0,		1.0, 0.0, 0.0,		//Node H
+     0.5, 0.5, -0.5,1.0,		0.0, 0.0, 1.0,		//Node C
+
+     // Triangle 11
+     -0.5, 0.5, 0.5,1.0,		1.0, 0.0, 0.0,		//Node A
+     0.5, 0.5, 0.5,	1.0,		0.0, 1.0, 0.0,		//Node B
+     0.0, 0.95, 0.0,1.0,		1.0, 1.0, 1.0,		//Node E
+
+     // Triangle 12
+     0.5, 0.5, 0.5,	1.0,		0.0, 1.0, 0.0,		//Node B
+     0.5, 0.5, -0.5,1.0,		0.0, 0.0, 1.0,		//Node C
+     0.0, 0.95, 0.0,1.0,		1.0, 1.0, 1.0,		//Node E
+
+     // Triangle 13
+     0.5, 0.5, -0.5,1.0,		0.0, 0.0, 1.0,		//Node C
+     -0.5, 0.5, -0.5,1.0,		1.0, 1.0, 0.0,		//Node D
+     0.0, 0.95, 0.0,1.0,		1.0, 1.0, 1.0,		//Node E
+
+     // Triangle 14
+     -0.5, 0.5, -0.5,1.0,		1.0, 1.0, 0.0,		//Node D
+     -0.5, 0.5, 0.5,1.0,		1.0, 0.0, 0.0,		//Node A
+     0.0, 0.95, 0.0,1.0,		1.0, 1.0, 1.0,		//Node E
+])
+
 }
 
 function makePyramid() {
 //==============================================================================
 // Make a 4-cornered pyramid from one OpenGL TRIANGLE_STRIP primitive.
-// All vertex coords are +/1 or zero; pyramid base is in xy plane.
+// All vertex coords are +/1 or zero; pyramid base is in xy plane. 
+/*
+	0.0, 0.0, 0.0, 1.0,			0.0, 0.0, 0.0,		//Node 0
+	1.0, 0.0, 0.0, 1.0,			1.0, 0.0, 0.0,		//Node 1
+	0.0, 1.0, 0.0, 1.0,			0.0, 1.0, 0.0,		//Node 2
+	0.0, 0.0, 1.0, 1.0,			0.0, 0.0, 1.0,		//Node 3
+	*/
+pyramidVerts = new Float32Array([ 
+	//Triangle 1
+	0.0, 0.0, 0.0, 1.0,			0.0, 0.0, 0.0,		//Node 0
+	1.0, 0.0, 0.0, 1.0,			1.0, 0.0, 0.0,		//Node 1
+	0.0, 1.0, 0.0, 1.0,			0.0, 1.0, 0.0,		//Node 2
+
+	//Triangle 2
+	1.0, 0.0, 0.0, 1.0,			1.0, 0.0, 0.0,		//Node 1
+	0.0, 1.0, 0.0, 1.0,			0.0, 1.0, 0.0,		//Node 2
+	0.0, 0.0, 1.0, 1.0,			0.0, 0.0, 1.0,		//Node 3
+
+	//Triangle 3
+	0.0, 0.0, 0.0, 1.0,			0.0, 0.0, 0.0,		//Node 0
+	0.0, 1.0, 0.0, 1.0,			0.0, 1.0, 0.0,		//Node 2
+	0.0, 0.0, 1.0, 1.0,			0.0, 0.0, 1.0,		//Node 3
+
+	//Triangle 4
+	0.0, 0.0, 0.0, 1.0,			0.0, 0.0, 0.0,		//Node 0
+	1.0, 0.0, 0.0, 1.0,			1.0, 0.0, 0.0,		//Node 1
+	0.0, 0.0, 1.0, 1.0,			0.0, 0.0, 1.0,		//Node 3
+])
 
   	// YOU write this one...
 }
@@ -525,6 +699,22 @@ var phiHalfStep = Math.PI/barSides;		// half-phi angle between each side of bar
 			torVerts[j+6] = Math.random();		// random color 0.0 <= B < 1.0
 }
 
+function makeAxes() {
+
+axesVerts = new Float32Array([
+
+	-50, 0.0, 0.0, 1.0,		1.0, 0.0, 0.0,
+	50, 0.0, 0.0, 1.0, 		1.0, 0.0, 0.0,
+
+	0.0, -50.0, 0.0, 1.0, 	0.0, 1.0, 0.0,
+	0.0, 50.0, 0.0, 1.0, 	0.0, 1.0, 0.0,
+
+	0.0, 0.0, -50.0, 1.0, 	0.0, 0.0, 1.0,
+	0.0, 0.0, 50.0, 1.0, 	0.0, 0.0, 1.0,
+
+])
+}
+
 function makeGroundGrid() {
 //==============================================================================
 // Create a list of vertices that create a large grid of lines in the x,y plane
@@ -590,7 +780,114 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 
 	// SAVE world coord system;  
 	pushMatrix(modelMatrix);
+
+	//-------- Draw Crystal Defense System:
+
 	
+	modelMatrix.translate(-1, -1, 0.5);
+	modelMatrix.rotate(90, 1, 0, 0);
+	modelMatrix.scale(1,1,1);	
+	modelMatrix.scale(0.4, 0.4, 0.4);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							houseStart/floatsPerVertex, // start at this vertex number, and
+								houseVerts.length/floatsPerVertex);	// draw this many vertices.
+
+    //Adding the crystal
+	modelMatrix.translate(0.0, 0.95, 0.0);
+    modelMatrix.rotate(g_angle01, 1, 1, 0);
+    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	//Adding the pyramid
+	modelMatrix.translate(0.0, 0.95, 0.0);
+	modelMatrix.rotate(currentAngle*2, 0, 1, 0);
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							pyramidStart/floatsPerVertex, // start at this vertex number, and
+								pyramidVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	//Adding another Crystal
+	modelMatrix.translate(0.0, 1, 0.0);
+    modelMatrix.rotate(currentAngle, 0, 0, 1);
+    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+	//Add the other houses
+
+	pushMatrix(modelMatrix);		// Saving world coord system
+	
+	modelMatrix.translate(1, 1, 0.5);
+	modelMatrix.rotate(90, 1, 0, 0);
+	modelMatrix.scale(1,1,1);	
+	modelMatrix.scale(0.4, 0.4, 0.4);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							houseStart/floatsPerVertex, // start at this vertex number, and
+								houseVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+	pushMatrix(modelMatrix);		// Saving world coord system
+	
+	modelMatrix.translate(1, -1, 0.5);
+	modelMatrix.rotate(90, 1, 0, 0);
+	modelMatrix.scale(1,1,1);	
+	modelMatrix.scale(0.4, 0.4, 0.4);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							houseStart/floatsPerVertex, // start at this vertex number, and
+								houseVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+	pushMatrix(modelMatrix);		// Saving world coord system
+	
+	modelMatrix.translate(-1, 1, 0.5);
+	modelMatrix.rotate(90, 1, 0, 0);
+	modelMatrix.scale(1,1,1);	
+	modelMatrix.scale(0.4, 0.4, 0.4);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							houseStart/floatsPerVertex, // start at this vertex number, and
+								houseVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+	pushMatrix(modelMatrix);		// Saving world coord system
+	
+	modelMatrix.translate(0, 0, 0.5);
+	modelMatrix.rotate(90, 1, 0, 0);
+	modelMatrix.scale(1,1,1);	
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+
+	/*
+	
+	// SAVE world coord system;  
+	pushMatrix(modelMatrix);
+
 	//-------Draw Spinning Cylinder:
     modelMatrix.translate(-0.4,-0.4, 0.0);  // 'set' means DISCARD old matrix,
     						// (drawing axes centered in CVV), and then make new
@@ -648,12 +945,14 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 							  torVerts.length/floatsPerVertex);	// draw this many vertices.
 							  
   	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+	*/
 	  
 	//===========================================================
   	pushMatrix(modelMatrix);  // SAVE world drawing coords.
   	//---------Draw Ground Plane, without spinning.
   	// position it.
-  	modelMatrix.translate( 0.4, -0.4, 0.0);	
+  	modelMatrix.translate(0.4, -0.4, 0.0);	
   	modelMatrix.scale(0.1, 0.1, 0.1);  // shrink by 10X:
 
   	// Drawing:
@@ -665,6 +964,26 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 							  gndVerts.length/floatsPerVertex);	// draw this many vertices.
 							  
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+	//===========================================================
+	//AXES OF THE WORLD
+  	pushMatrix(modelMatrix);  // SAVE world drawing coords.
+  	//---------Draw Ground Plane, without spinning.
+  	// position it.
+  	modelMatrix.translate(0.0, 0.0, 0.0);	
+  	modelMatrix.scale(0.1, 0.1, 0.1);  // shrink by 10X:
+
+  	// Drawing:
+  	// Pass our current matrix to the vertex shaders:
+    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    // Draw just the ground-plane's vertices
+    gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
+    						  axesStart/floatsPerVertex,	// start at this vertex number, and
+							  axesVerts.length/floatsPerVertex);	// draw this many vertices.
+							  
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+	
 }
 
 function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
@@ -722,10 +1041,15 @@ function animate(angle) {
 	//  limit the angle to move smoothly between +20 and -85 degrees:
 	//  if(angle >  120.0 && ANGLE_STEP > 0) ANGLE_STEP = -ANGLE_STEP;
 	//  if(angle < -120.0 && ANGLE_STEP < 0) ANGLE_STEP = -ANGLE_STEP;
+
+	g_angle01 =g_angle01 + (g_angle01Rate * elapsed) / 1000.0;
+  if (g_angle01 > g_angle01max && g_angle01Rate >0) g_angle01Rate = -g_angle01Rate;
+  if (g_angle01 < g_angle01min && g_angle01Rate <0) g_angle01Rate = -g_angle01Rate;
   
 	var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
 	return newAngle %= 360;
 }
+
 
 //==================HTML Button Callbacks
 function nextShape() {
