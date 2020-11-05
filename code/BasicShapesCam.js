@@ -737,7 +737,7 @@ function makeGroundGrid() {
 
 	var xcount = 100;			// # of lines to draw in x,y to make the grid.
 	var ycount = 100;		
-	var xymax	= 50.0;			// grid size; extends to cover +/-xymax in x and y.
+	var xymax	= 100.0;			// grid size; extends to cover +/-xymax in x and y.
  	var xColr = new Float32Array([1.0, 1.0, 0.3]);	// bright yellow
  	var yColr = new Float32Array([0.5, 1.0, 0.5]);	// bright green.
  	
@@ -837,6 +837,25 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
     							diamondStart/floatsPerVertex, // start at this vertex number, and
 								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
 
+	// -----------------AXES ON JOINT-----------------
+
+	pushMatrix(modelMatrix);  // SAVE world drawing coords.
+  	//---------Draw Ground Plane, without spinning.
+  	// position it.
+  	modelMatrix.scale(0.1, 0.1, 0.1);  // shrink by 10X:
+
+  	// Drawing:
+  	// Pass our current matrix to the vertex shaders:
+    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+    // Draw just the ground-plane's vertices
+    gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
+    						  axesStart/floatsPerVertex,	// start at this vertex number, and
+							  axesVerts.length/floatsPerVertex);	// draw this many vertices.
+							  
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+	// ------------------END OF AXES-------------
+
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
 	//Add the other houses
@@ -883,6 +902,7 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
     							houseStart/floatsPerVertex, // start at this vertex number, and
 								houseVerts.length/floatsPerVertex);	// draw this many vertices.
+
 
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
