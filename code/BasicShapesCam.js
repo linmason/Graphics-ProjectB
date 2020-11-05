@@ -583,6 +583,9 @@ function makeGroundGrid() {
 }
 
 function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+	// SAVE lens world coord;  
+	pushMatrix(modelMatrix);
+
 	// Camera position
 	modelMatrix.lookAt( 5, 5, 3,	// center of projection
 		-1, -2, -0.5,	// look-at point 
@@ -665,6 +668,9 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 							  gndVerts.length/floatsPerVertex);	// draw this many vertices.
 							  
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+
+	modelMatrix = popMatrix();  // RESTORE lense drawing coords.
 }
 
 function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
@@ -681,30 +687,37 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	var vpAspect = (g_canvas.width/2) / g_canvas.height;	// onscreen aspect ratio for this camera: width/height.
 
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-
+	
 	// Define 'camera lens':
-	modelMatrix.perspective(	42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
+	var fovy = 40.0;
+	var near = 1.0;
+	var far = 100.0;
+	modelMatrix.perspective(fovy,   // FOVY: top-to-bottom vertical image angle, in degrees
 		vpAspect,   // Image Aspect Ratio: camera lens width/height
-		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
-			1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
+		near,   // camera z-near distance (always positive; frustum begins at z = -znear)
+		far);  // camera z-far distance (always positive; frustum ends at z = -zfar)
 	
 	drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
 
   //----------------------Create, fill RIGHT viewport------------------------
-	gl.viewport(g_canvas.width/2,											 	// Viewport lower-left corner
+	gl.viewport(g_canvas.width/2,						// Viewport lower-left corner
 		0, 												// location(in pixels)
-	  g_canvas.width/2, 					// viewport width,
-	  g_canvas.height);			  // viewport height in pixels.
+	  g_canvas.width/2, 								// viewport width,
+	  g_canvas.height);			  						// viewport height in pixels.
 
 	vpAspect = (g_canvas.width/2) /	g_canvas.height;				// Onscreen aspect ration for this camera: width/height.
 
+	var perspective_frustum_height = 2 * Math.tan(Math.PI/180 * fovy/2) * (far-near)/3;  // frustum height at z=(far-near)/3 distance
+	var perspective_frustum_width = vpAspect * perspective_frustum_height;
+
+
 	// For this viewport, set camera's eye point and the viewing volume:
-	modelMatrix.setOrtho(-8,  //left
-		8,  //right
-		-8,  //bottom
-		8,  //top
-		1,  //near
-		1000);  //far
+	modelMatrix.setOrtho(-perspective_frustum_width/2,  //left
+		perspective_frustum_width/2,  //right
+		-perspective_frustum_height/2,  //bottom
+		perspective_frustum_height/2,  //top
+		near,  //near
+		far);  //far
 
 	drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
 }
