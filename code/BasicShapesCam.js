@@ -582,27 +582,7 @@ function makeGroundGrid() {
 	}
 }
 
-function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
-//==============================================================================
-	// Clear <canvas>  colors AND the depth buffer
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-	//----------------------Create, fill LEFT viewport------------------------
-	gl.viewport(0,
-		0, 						// location(in pixels)
-	  g_canvas.width/2, 		// viewport width,
-	  g_canvas.height);			// viewport height in pixels.
-
-	var vpAspect = (g_canvas.width/2) / g_canvas.height;	// onscreen aspect ratio for this camera: width/height.
-
-	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-
-	// Define 'camera lens':
-	modelMatrix.perspective(	42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
-		vpAspect,   // Image Aspect Ratio: camera lens width/height
-		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
-			1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
-
+function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	// Camera position
 	modelMatrix.lookAt( 5, 5, 3,	// center of projection
 		-1, -2, -0.5,	// look-at point 
@@ -685,8 +665,30 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 							  gndVerts.length/floatsPerVertex);	// draw this many vertices.
 							  
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+}
+
+function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+//==============================================================================
+	// Clear <canvas>  colors AND the depth buffer
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+	//----------------------Create, fill LEFT viewport------------------------
+	gl.viewport(0,
+		0, 						// location(in pixels)
+	  g_canvas.width/2, 		// viewport width,
+	  g_canvas.height);			// viewport height in pixels.
+
+	var vpAspect = (g_canvas.width/2) / g_canvas.height;	// onscreen aspect ratio for this camera: width/height.
+
+	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
+
+	// Define 'camera lens':
+	modelMatrix.perspective(	42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
+		vpAspect,   // Image Aspect Ratio: camera lens width/height
+		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
+			1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
 	
-  //===========================================================
+	drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
 
   //----------------------Create, fill RIGHT viewport------------------------
 	gl.viewport(g_canvas.width/2,											 	// Viewport lower-left corner
@@ -697,25 +699,14 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	vpAspect = (g_canvas.width/2) /	g_canvas.height;				// Onscreen aspect ration for this camera: width/height.
 
 	// For this viewport, set camera's eye point and the viewing volume:
-	modelMatrix.setPerspective(24.0, 		// fovy: y-axis field-of-view in degrees 	
-														// (top <-> bottom in view frustum)
-									vpAspect, // aspect ratio: width/height
-									1, 100);	// near, far (always >0).
-	modelMatrix.lookAt(	4, 2, 8, 				// 'Center' or 'Eye Point',
-						0, 0, 0, 				// look-At point,
-						0, 1, 0);				// View UP vector, all in 'world' coords.
+	modelMatrix.setOrtho(-8,  //left
+		8,  //right
+		-8,  //bottom
+		8,  //top
+		1,  //near
+		1000);  //far
 
-	//---------Draw Ground Plane, without spinning.
-  	// position it.
-  	modelMatrix.translate( 0.4, -0.4, 0.0);	
-	modelMatrix.scale(0.1, 0.1, 0.1);  // shrink by 10X:
-	
-	// Pass the model view projection matrix to graphics hardware thru u_MvpMatrix
-	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-	// Draw the cube
-	gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
-		gndStart/floatsPerVertex,	// start at this vertex number, and
-		gndVerts.length/floatsPerVertex);	// draw this many vertices.
+	drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
 }
 
 // Last time that this function was called:  (used for animation timing)
