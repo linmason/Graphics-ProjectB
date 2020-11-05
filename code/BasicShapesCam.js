@@ -42,6 +42,10 @@ var FSHADER_SOURCE =
 var g_canvas = document.getElementById('webgl');  // Retrieve HTML <canvas> element
 var g_strafeTranslate = 0;
 var g_lookatTranslate = 0;
+var g_theta = 0;
+var g_thetaRate = 0;
+var g_zOffset = 0;
+var g_zOffsetRate = 0;
 
 var ANGLE_STEP = 45.0;		// Rotation angle rate (degrees/second)
 var floatsPerVertex = 7;	// # of Float32Array elements used for each vertex
@@ -788,12 +792,19 @@ function makeGroundGrid() {
 }
 
 function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_position, lookat_position) {
+
+	console.log("drawProjected");
+	console.log(eye_position);
+	console.log(lookat_position);
+	console.log(g_theta);
+	console.log(g_zOffset);
+
 	// SAVE lens world coord;  
 	pushMatrix(modelMatrix);
 
 	// Camera position
 	modelMatrix.lookAt( eye_position[0], eye_position[1], eye_position[2],	// center of projection
-		lookat_position[0], lookat_position[0], lookat_position[0],	// look-at point 
+		lookat_position[0], lookat_position[1], lookat_position[2],	// look-at point 
 		0, 0, 1);	// View UP vector.
 
 	// SAVE world coord system;  
@@ -1009,21 +1020,38 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_position, 
 
 // updates camera position based on keyboard input
 function updateCameraPositions(eye_position, lookat_position) {
+	// Update theta and zOffset
+	g_theta += g_thetaRate;
+	g_zOffset += g_zOffsetRate;
+
 	// element-wise subtraction and mult of velocity
 	var displacement = [];
 	for(var i = 0;i<=lookat_position.length-1;i++)
-  		displacement.push((lookat_position[i] - eye_position[i]) * g_lookatTranslate * 0.01);
+  		displacement.push((lookat_position[i] - eye_position[i]) * g_lookatTranslate * 0.02);
 
-	// element-wise add displacement to both eye and lookat position
+	// element-wise add displacement to eye position
 	for(var i = 0;i<=lookat_position.length-1;i++) {
 		eye_position[i] += displacement[i];
-		lookat_position[i] += displacement[i];
 	}
 
+	// element-wise add strafing to eye position
+	eye_position[0] += Math.cos(g_theta + Math.PI/2) * g_strafeTranslate * 0.02;
+	eye_position[1] += Math.sin(g_theta + Math.PI/2) * g_strafeTranslate * 0.02;
 
 
+	// update look at position
+	lookat_position[0] = eye_position[0] + Math.cos(g_theta);
+	lookat_position[1] = eye_position[1] + Math.sin(g_theta);
+	lookat_position[2] = eye_position[2] + g_zOffset;
+
+	console.log("updateCameraPosition")
 	console.log(eye_position);
 	console.log(lookat_position);
+	console.log(displacement);
+	console.log(g_theta);
+	console.log(g_zOffset);
+	
+
 }
 
 // Last time that this function was called:  (used for animation timing)
@@ -1113,12 +1141,12 @@ function myKeyDown(kev) {
 		//----------------WASD keys------------------------
 		case "KeyA":
 			console.log("a/A key: Strafe LEFT!\n");
-			g_strafeTranslate = -1;
+			g_strafeTranslate = 1;
 			console.log(g_strafeTranslate);
 			break;
 		case "KeyD":
 			console.log("d/D key: Strafe RIGHT!\n");
-			g_strafeTranslate = 1;
+			g_strafeTranslate = -1;
 			console.log(g_strafeTranslate);
 			break;
 		case "KeyS":
@@ -1134,16 +1162,19 @@ function myKeyDown(kev) {
 		//----------------Arrow keys------------------------
 		case "ArrowLeft": 	
 			console.log(' left-arrow.');
-			// and print on webpage in the <div> element with id='Result':
+			g_thetaRate = 0.03;
 			break;
 		case "ArrowRight":
 			console.log('right-arrow.');
+			g_thetaRate = -0.03;
 			break;
 		case "ArrowUp":		
 			console.log('   up-arrow.');
+			g_zOffsetRate = 0.02;
 			break;
 		case "ArrowDown":
 			console.log(' down-arrow.');
+			g_zOffsetRate = -0.02;
 			break;	
 		default:
 			console.log("UNUSED!");
@@ -1177,13 +1208,16 @@ function myKeyUp(kev) {
 			break;
 		//----------------Arrow keys------------------------
 		case "ArrowLeft": 	
-			// and print on webpage in the <div> element with id='Result':
+			g_thetaRate = 0;
 			break;
 		case "ArrowRight":
+			g_thetaRate = 0;
 			break;
 		case "ArrowUp":
+			g_zOffsetRate = 0;
 			break;
 		case "ArrowDown":
+			g_zOffsetRate = 0;
 			break;	
 		default:
 			break;
