@@ -40,6 +40,9 @@ var FSHADER_SOURCE =
 
 // Global Variables
 var g_canvas = document.getElementById('webgl');  // Retrieve HTML <canvas> element
+var g_strafeTranslate = 0;
+var g_lookatTranslate = 0;
+
 var ANGLE_STEP = 45.0;		// Rotation angle rate (degrees/second)
 var floatsPerVertex = 7;	// # of Float32Array elements used for each vertex
 													// (x,y,z,w)position + (r,g,b)color
@@ -72,6 +75,10 @@ function main() {
 		return;
 	}
 
+	// add event listeners
+	window.addEventListener("keydown", myKeyDown, false);
+	window.addEventListener("keyup", myKeyUp, false);
+
 	// Specify the color for clearing <canvas>
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
@@ -92,10 +99,18 @@ function main() {
 	// Create, init current rotation angle value in JavaScript
 	var currentAngle = 0.0;
 
+	// Initialize eye position
+	var eye_position = [0, 0, 1];
+
+	// Initialize look at position
+	var lookat_position = [0, 1, 1];
+
 	// Start drawing: create 'tick' variable whose value is this function:
 	var tick = function() {
+		// get lookat and eye positions
+		updateCameraPositions(eye_position, lookat_position);
 		currentAngle = animate(currentAngle);  // Update the rotation angle
-		drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
+		drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_position, lookat_position);   // Draw shapes
 		// report current angle on console
 		//console.log('currentAngle=',currentAngle);
 		requestAnimationFrame(tick, canvas);  // Request that the browser re-draw the webpage
@@ -582,13 +597,13 @@ function makeGroundGrid() {
 	}
 }
 
-function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_position, lookat_position) {
 	// SAVE lens world coord;  
 	pushMatrix(modelMatrix);
 
 	// Camera position
-	modelMatrix.lookAt( 5, 5, 3,	// center of projection
-		-1, -2, -0.5,	// look-at point 
+	modelMatrix.lookAt( eye_position[0], eye_position[1], eye_position[2],	// center of projection
+		lookat_position[0], lookat_position[0], lookat_position[0],	// look-at point 
 		0, 0, 1);	// View UP vector.
 
 	// SAVE world coord system;  
@@ -673,7 +688,7 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();  // RESTORE lense drawing coords.
 }
 
-function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_position, lookat_position) {
 //==============================================================================
 	// Clear <canvas>  colors AND the depth buffer
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -697,7 +712,7 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 		near,   // camera z-near distance (always positive; frustum begins at z = -znear)
 		far);  // camera z-far distance (always positive; frustum ends at z = -zfar)
 	
-	drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
+	drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_position, lookat_position);
 
   //----------------------Create, fill RIGHT viewport------------------------
 	gl.viewport(g_canvas.width/2,						// Viewport lower-left corner
@@ -719,7 +734,24 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 		near,  //near
 		far);  //far
 
-	drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix);
+	drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_position, lookat_position);
+}
+
+// updates camera position based on keyboard input
+function updateCameraPositions(eye_position, lookat_position) {
+	// element-wise subtraction and mult of velocity
+	var displacement = [];
+	for(var i = 0;i<=lookat_position.length-1;i++)
+  		displacement.push((lookat_position[i] - eye_position[i]) * g_lookatTranslate * 0.01);
+
+	// element-wise add displacement to both eye and lookat position
+	for(var i = 0;i<=lookat_position.length-1;i++) {
+		eye_position[i] += displacement[i];
+		lookat_position[i] += displacement[i];
+	}
+
+	console.log(eye_position);
+	console.log(lookat_position);
 }
 
 // Last time that this function was called:  (used for animation timing)
@@ -780,3 +812,104 @@ function resizeCanvas() {
 	g_canvas.height = (innerHeight*.7) - xtraMargin;
 }
  
+
+function myKeyDown(kev) {
+	//===============================================================================
+	// Called when user presses down ANY key on the keyboard;
+	//
+	// For a light, easy explanation of keyboard events in JavaScript,
+	// see:    http://www.kirupa.com/html5/keyboard_events_in_javascript.htm
+	// For a thorough explanation of a mess of JavaScript keyboard event handling,
+	// see:    http://javascript.info/tutorial/keyboard-events
+	//
+	// NOTE: Mozilla deprecated the 'keypress' event entirely, and in the
+	//        'keydown' event deprecated several read-only properties I used
+	//        previously, including kev.charCode, kev.keyCode. 
+	//        Revised 2/2019:  use kev.key and kev.code instead.
+	//
+	// Report EVERYTHING in console:
+	  console.log(  "--kev.code:",    kev.code,   "\t\t--kev.key:",     kev.key, 
+				  "\n--kev.ctrlKey:", kev.ctrlKey,  "\t--kev.shiftKey:",kev.shiftKey,
+				  "\n--kev.altKey:",  kev.altKey,   "\t--kev.metaKey:", kev.metaKey);
+
+	switch(kev.code) {
+		//----------------WASD keys------------------------
+		case "KeyA":
+			console.log("a/A key: Strafe LEFT!\n");
+			g_strafeTranslate = -1;
+			console.log(g_strafeTranslate);
+			break;
+		case "KeyD":
+			console.log("d/D key: Strafe RIGHT!\n");
+			g_strafeTranslate = 1;
+			console.log(g_strafeTranslate);
+			break;
+		case "KeyS":
+			console.log("s/S key: Move BACK!\n");
+			g_lookatTranslate = -1;
+			console.log(g_lookatTranslate);
+			break;
+		case "KeyW":
+			console.log("w/W key: Move FWD!\n");
+			g_lookatTranslate = 1;
+			console.log(g_lookatTranslate);
+			break;
+		//----------------Arrow keys------------------------
+		case "ArrowLeft": 	
+			console.log(' left-arrow.');
+			// and print on webpage in the <div> element with id='Result':
+			break;
+		case "ArrowRight":
+			console.log('right-arrow.');
+			break;
+		case "ArrowUp":		
+			console.log('   up-arrow.');
+			break;
+		case "ArrowDown":
+			console.log(' down-arrow.');
+			break;	
+		default:
+			console.log("UNUSED!");
+			break;
+	}
+}
+
+
+function myKeyUp(kev) {
+	//===============================================================================
+	// Called when user releases ANY key on the keyboard; captures scancodes well
+	
+	console.log('myKeyUp()--keyCode='+kev.keyCode+' released.');
+	switch(kev.code) {
+		//----------------WASD keys------------------------
+		case "KeyA":
+			g_strafeTranslate = 0;
+			console.log(g_strafeTranslate);
+			break;
+		case "KeyD":
+			g_strafeTranslate = 0;
+			console.log(g_strafeTranslate);
+			break;
+		case "KeyS":
+			g_lookatTranslate = 0;
+			console.log(g_lookatTranslate);
+			break;
+		case "KeyW":
+			g_lookatTranslate = 0;
+			console.log(g_lookatTranslate);
+			break;
+		//----------------Arrow keys------------------------
+		case "ArrowLeft": 	
+			// and print on webpage in the <div> element with id='Result':
+			break;
+		case "ArrowRight":
+			break;
+		case "ArrowUp":
+			break;
+		case "ArrowDown":
+			break;	
+		default:
+			break;
+	}
+
+	}
