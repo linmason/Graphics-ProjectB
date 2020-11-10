@@ -57,6 +57,18 @@ var g_angle01Rate = 100;
 var g_angle01min = -180;
 var g_angle01max = 180;
 
+//------------For mouse click-and-drag: -------------------------------
+var isDrag=false;		// mouse-drag: true when user holds down mouse button
+var xMclik=0.0;			// last mouse button-down position (in CVV coords)
+var yMclik=0.0;   
+var xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
+var yMdragTot=0.0;  
+
+var qNew = new Quaternion(0,0,0,1);			// most-recent mouse drag's rotation
+var qTot = new Quaternion(0,0,0,1);			// 'current' orientation (made from qNew)
+var quatMatrix = new Matrix4();				// rotation matrix, made from latest qTot
+
+
 
 function main() {
 //==============================================================================
@@ -87,6 +99,13 @@ function main() {
 	window.addEventListener("keydown", myKeyDown, false);
 	window.addEventListener("keyup", myKeyUp, false);
 
+	canvas.onmousedown	=	function(ev){myMouseDown( ev, gl, canvas) }; 
+  					// when user's mouse button goes down, call mouseDown() function
+    canvas.onmousemove = 	function(ev){myMouseMove( ev, gl, canvas) };
+											// when the mouse moves, call mouseMove() function					
+    canvas.onmouseup = 		function(ev){myMouseUp(   ev, gl, canvas)};
+
+
 	// Specify the color for clearing <canvas>
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
@@ -103,6 +122,7 @@ function main() {
 
 	// Create a local version of our model matrix in JavaScript 
 	var modelMatrix = new Matrix4();
+	
 
 	// Create, init current rotation angle value in JavaScript
 	var currentAngle = 0.0;
@@ -807,11 +827,55 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 		lookat_position[0], lookat_position[1], lookat_position[2],	// look-at point 
 		0, 0, 1);	// View UP vector.
 
+
+
+
+
+
+
+ 
+	// --------- Draw Mouse Rotating Crystal
+
 	// SAVE world coord system;  
 	pushMatrix(modelMatrix);
 
-	//-------- Draw Crystal Defense System:
+	//modelMatrix.rotate(g_theta, 0, 0, 1);
+	//quatMatrix.rotate(g_theta + 90, 0, 0, 1);
+	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);	// Quaternion-->Matrix
+	//quatMatrix.rotate(g_theta + 90, 0, 0, 1);
 
+	//modelMatrix.rotate(g_theta, 0, 0, 1);
+	modelMatrix.concat(quatMatrix);	// apply that matrix.
+	//modelMatrix.rotate(g_theta + 90, 0, 0, 1);
+
+	//modelMatrix.rotate(90, 1, 0, 0);
+
+
+
+	//-------------------------------
+	// Drawing:
+	// Use the current ModelMatrix to transform & draw something new from our VBO:
+    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+
+	
+
+
+
+
+	//-------- Draw Crystal Defense System:
+	// SAVE world coord system;  
+	pushMatrix(modelMatrix);
 	
 	modelMatrix.translate(-1, -1, 0.5);
 	modelMatrix.rotate(90, 1, 0, 0);
@@ -820,7 +884,7 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
-	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing prmitive, and
     							houseStart/floatsPerVertex, // start at this vertex number, and
 								houseVerts.length/floatsPerVertex);	// draw this many vertices.
 
@@ -917,19 +981,7 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
-	pushMatrix(modelMatrix);		// Saving world coord system
 	
-	modelMatrix.translate(0, 0, 0.5);
-	modelMatrix.rotate(90, 1, 0, 0);
-	modelMatrix.scale(1,1,1);	
-
-	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-
-	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
-    							diamondStart/floatsPerVertex, // start at this vertex number, and
-								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
-
-	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 	  
 	//===========================================================
   	pushMatrix(modelMatrix);  // SAVE world drawing coords.
@@ -965,6 +1017,9 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 							  axesVerts.length/floatsPerVertex);	// draw this many vertices.
 							  
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+
+	
 
 	modelMatrix = popMatrix();  // RESTORE lense drawing coords.
 }
@@ -1224,3 +1279,221 @@ function myKeyUp(kev) {
 	}
 
 	}
+
+function myMouseDown(ev, gl, canvas) {
+//==============================================================================
+// Called when user PRESSES down any mouse button;
+// 									(Which button?    console.log('ev.button='+ev.button);   )
+// 		ev.clientX, ev.clientY == mouse pointer location, but measured in webpage 
+//		pixels: left-handed coords; UPPER left origin; Y increases DOWNWARDS (!)  
+
+// Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
+  var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
+  var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
+  var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+//  console.log('myMouseDown(pixel coords): xp,yp=\t',xp,',\t',yp);
+  
+	// Convert to Canonical View Volume (CVV) coordinates too:
+  var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+  						 (canvas.width/2);			// normalize canvas to -1 <= x < +1,
+	var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
+							 (canvas.height/2);
+//	console.log('myMouseDown(CVV coords  ):  x, y=\t',x,',\t',y);
+	
+	isDrag = true;											// set our mouse-dragging flag
+	xMclik = x;													// record where mouse-dragging began
+	yMclik = y;
+};
+
+function myMouseMove(ev, gl, canvas) {
+//==============================================================================
+// Called when user MOVES the mouse with a button already pressed down.
+// 									(Which button?   console.log('ev.button='+ev.button);    )
+// 		ev.clientX, ev.clientY == mouse pointer location, but measured in webpage 
+//		pixels: left-handed coords; UPPER left origin; Y increases DOWNWARDS (!)  
+
+	if(isDrag==false) return;				// IGNORE all mouse-moves except 'dragging'
+
+	// Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
+  var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
+  var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
+	var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+//  console.log('myMouseMove(pixel coords): xp,yp=\t',xp,',\t',yp);
+  
+	// Convert to Canonical View Volume (CVV) coordinates too:
+  var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+  						 (canvas.width/2);			// normalize canvas to -1 <= x < +1,
+	var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
+							 (canvas.height/2);
+
+	// find how far we dragged the mouse:
+	xMdragTot += (x - xMclik);					// Accumulate change-in-mouse-position,&
+	yMdragTot += (y - yMclik);
+	// AND use any mouse-dragging we found to update quaternions qNew and qTot.
+	dragQuat(x - xMclik, y - yMclik);
+	
+	xMclik = x;													// Make NEXT drag-measurement from here.
+	yMclik = y;
+	
+	// Show it on our webpage, in the <div> element named 'MouseText':
+	document.getElementById('MouseText').innerHTML=
+			'Mouse Drag totals (CVV x,y coords):\t'+
+			 xMdragTot.toFixed(5)+', \t'+
+			 yMdragTot.toFixed(5);	
+};
+
+function myMouseUp(ev, gl, canvas) {
+//==============================================================================
+// Called when user RELEASES mouse button pressed previously.
+// 									(Which button?   console.log('ev.button='+ev.button);    )
+// 		ev.clientX, ev.clientY == mouse pointer location, but measured in webpage 
+//		pixels: left-handed coords; UPPER left origin; Y increases DOWNWARDS (!)  
+
+// Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
+  var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
+  var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
+	var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+//  console.log('myMouseUp  (pixel coords): xp,yp=\t',xp,',\t',yp);
+  
+	// Convert to Canonical View Volume (CVV) coordinates too:
+  var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+  						 (canvas.width/2);			// normalize canvas to -1 <= x < +1,
+	var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
+							 (canvas.height/2);
+//	console.log('myMouseUp  (CVV coords  ):  x, y=\t',x,',\t',y);
+	
+	isDrag = false;											// CLEAR our mouse-dragging flag, and
+	// accumulate any final bit of mouse-dragging we did:
+	xMdragTot += (x - xMclik);
+	yMdragTot += (y - yMclik);
+//	console.log('myMouseUp: xMdragTot,yMdragTot =',xMdragTot,',\t',yMdragTot);
+
+	// AND use any mouse-dragging we found to update quaternions qNew and qTot;
+	dragQuat(x - xMclik, y - yMclik);
+
+	// Show it on our webpage, in the <div> element named 'MouseText':
+	document.getElementById('MouseText').innerHTML=
+			'Mouse Drag totals (CVV x,y coords):\t'+
+			 xMdragTot.toFixed(5)+', \t'+
+			 yMdragTot.toFixed(5);	
+};
+
+function dragQuat(xdrag, ydrag) {
+//==============================================================================
+// Called when user drags mouse by 'xdrag,ydrag' as measured in CVV coords.
+// We find a rotation axis perpendicular to the drag direction, and convert the 
+// drag distance to an angular rotation amount, and use both to set the value of 
+// the quaternion qNew.  We then combine this new rotation with the current 
+// rotation stored in quaternion 'qTot' by quaternion multiply.  Note the 
+// 'draw()' function converts this current 'qTot' quaternion to a rotation 
+// matrix for drawing. 
+	var res = 5;
+	var qTmp = new Quaternion(0,0,0,1);
+	
+	var dist = Math.sqrt(xdrag*xdrag + ydrag*ydrag);
+	// console.log('xdrag,ydrag=',xdrag.toFixed(5),ydrag.toFixed(5),'dist=',dist.toFixed(5));
+	
+	qNew.setFromAxisAngle(-ydrag*Math.sin(g_theta) + 0.0001, ydrag*Math.cos(g_theta) + 0.0001, xdrag + 0.0001, dist*50.0);
+	// (why add tiny 0.0001? To ensure we never have a zero-length rotation axis)
+							// why axis (x,y,z) = (-yMdrag,+xMdrag,0)? 
+							// -- to rotate around +x axis, drag mouse in -y direction.
+							// -- to rotate around +z axis, drag mouse in +x direction.
+
+	
+
+	qTmp.multiply(qNew,qTot);			// apply new rotation to current rotation. 
+	//--------------------------
+	// IMPORTANT! Why qNew*qTot instead of qTot*qNew? (Try it!)
+	// ANSWER: Because 'duality' governs ALL transformations, not just matrices. 
+	// If we multiplied in (qTot*qNew) order, we would rotate the drawing axes
+	// first by qTot, and then by qNew--we would apply mouse-dragging rotations
+	// to already-rotated drawing axes.  Instead, we wish to apply the mouse-drag
+	// rotations FIRST, before we apply rotations from all the previous dragging.
+	//------------------------
+	// IMPORTANT!  Both qTot and qNew are unit-length quaternions, but we store 
+	// them with finite precision. While the product of two (EXACTLY) unit-length
+	// quaternions will always be another unit-length quaternion, the qTmp length
+	// may drift away from 1.0 if we repeat this quaternion multiply many times.
+	// A non-unit-length quaternion won't work with our quaternion-to-matrix fcn.
+	// Matrix4.prototype.setFromQuat().
+//	qTmp.normalize();						// normalize to ensure we stay at length==1.0.
+	qTot.copy(qTmp);
+	// show the new quaternion qTot on our webpage in the <div> element 'QuatValue'
+	document.getElementById('QuatValue').innerHTML= 
+														 '\t X=' +qTot.x.toFixed(res)+
+														'i\t Y=' +qTot.y.toFixed(res)+
+														'j\t Z=' +qTot.z.toFixed(res)+
+														'k\t W=' +qTot.w.toFixed(res)+
+														'<br>length='+qTot.length().toFixed(res);
+};
+
+function testQuaternions() {
+//==============================================================================
+// Test our little "quaternion-mod.js" library with simple rotations for which 
+// we know the answers; print results to make sure all functions work as 
+// intended.
+// 1)  Test constructors and value-setting functions:
+
+	var res = 5;
+	var myQuat = new Quaternion(1,2,3,4);		
+		console.log('constructor: myQuat(x,y,z,w)=', 
+		myQuat.x, myQuat.y, myQuat.z, myQuat.w);
+	myQuat.clear();
+		console.log('myQuat.clear()=', 
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), 
+		myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+	myQuat.set(1,2, 3,4);
+		console.log('myQuat.set(1,2,3,4)=', 
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), 
+		myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+		console.log('myQuat.length()=', myQuat.length().toFixed(res));
+	myQuat.normalize();
+		console.log('myQuat.normalize()=', 
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+		// Simplest possible quaternions:
+	myQuat.setFromAxisAngle(1,0,0,0);
+		console.log('Set myQuat to 0-deg. rot. on x axis=',
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+	myQuat.setFromAxisAngle(0,1,0,0);
+		console.log('set myQuat to 0-deg. rot. on y axis=',
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+	myQuat.setFromAxisAngle(0,0,1,0);
+		console.log('set myQuat to 0-deg. rot. on z axis=',
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), myQuat.z.toFixed(res), myQuat.w.toFixed(res), '\n');
+		
+	myQmat = new Matrix4();
+	myQuat.setFromAxisAngle(1,0,0, 90.0);	
+		console.log('set myQuat to +90-deg rot. on x axis =',
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+	myQmat.setFromQuat(myQuat.x, myQuat.y, myQuat.z, myQuat.w);
+		console.log('myQuat as matrix: (+y axis <== -z axis)(+z axis <== +y axis)');
+		myQmat.printMe();
+	
+	myQuat.setFromAxisAngle(0,1,0, 90.0);	
+		console.log('set myQuat to +90-deg rot. on y axis =',
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+	myQmat.setFromQuat(myQuat.x, myQuat.y, myQuat.z, myQuat.w);
+		console.log('myQuat as matrix: (+x axis <== +z axis)(+z axis <== -x axis)');
+		myQmat.printMe();
+
+	myQuat.setFromAxisAngle(0,0,1, 90.0);	
+		console.log('set myQuat to +90-deg rot. on z axis =',
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+	myQmat.setFromQuat(myQuat.x, myQuat.y, myQuat.z, myQuat.w);
+		console.log('myQuat as matrix: (+x axis <== -y axis)(+y axis <== +x axis)');
+		myQmat.printMe();
+
+	// Test quaternion multiply: 
+	// (q1*q2) should rotate drawing axes by q1 and then by q2;  it does!
+	var qx90 = new Quaternion;
+	var qy90 = new Quaternion;
+	qx90.setFromAxisAngle(1,0,0,90.0);			// +90 deg on x axis
+	qy90.setFromAxisAngle(0,1,0,90.0);			// +90 deg on y axis.
+	myQuat.multiply(qx90,qy90);
+		console.log('set myQuat to (90deg x axis) * (90deg y axis) = ',
+		myQuat.x.toFixed(res), myQuat.y.toFixed(res), myQuat.z.toFixed(res), myQuat.w.toFixed(res));
+	myQmat.setFromQuat(myQuat.x, myQuat.y, myQuat.z, myQuat.w);
+	console.log('myQuat as matrix: (+x <== +z)(+y <== +x )(+z <== +y');
+	myQmat.printMe();
+}
+
