@@ -849,22 +849,53 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 	// SAVE world coord system;  
 	pushMatrix(modelMatrix);
 
-	//modelMatrix.rotate(g_theta, 0, 0, 1);
-	//quatMatrix.rotate(g_theta + 90, 0, 0, 1);
+	modelMatrix.translate(0.0, 0.0, 1.0);
+
 	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);	// Quaternion-->Matrix
-	//quatMatrix.rotate(g_theta + 90, 0, 0, 1);
-
-	//modelMatrix.rotate(g_theta, 0, 0, 1);
+	
 	modelMatrix.concat(quatMatrix);	// apply that matrix.
-	//modelMatrix.rotate(g_theta + 90, 0, 0, 1);
 
-	//modelMatrix.rotate(90, 1, 0, 0);
-
-
-
+	modelMatrix.scale(0.6, 0.6, 0.6);
 	//-------------------------------
 	// Drawing:
 	// Use the current ModelMatrix to transform & draw something new from our VBO:
+
+
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix.rotate(90, 1, 0, 0);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix.rotate(90, 1, 0, 0);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix.rotate(90, 1, 0, 0);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix.translate(0.0, -0.18, -0.18);
+	modelMatrix.rotate(45, 1, 0, 0);
+	modelMatrix.scale(0.2, 0.5, 1.0);
+
 
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
@@ -941,12 +972,18 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
-	//Add the other houses
+	//House 1
 
 	pushMatrix(modelMatrix);		// Saving world coord system
 	
 	modelMatrix.translate(1, 1, 0.25);
 	modelMatrix.rotate(90, 1, 0, 0);
+
+
+	pushMatrix(modelMatrix);
+
+	modelMatrix.scale(1,1,1);
+
 	modelMatrix.scale(0.4, 0.4, 0.4);
 
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
@@ -955,10 +992,36 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
     							houseStart/floatsPerVertex, // start at this vertex number, and
 								houseVerts.length/floatsPerVertex);	// draw this many vertices.
 
+	modelMatrix = popMatrix();
+	modelMatrix.translate(0.0, 0.3, 0.0);
+	modelMatrix.rotate(currentAngle, 0, 1, 0);
+	modelMatrix.rotate(15, 0, 0, 1);
+
+	pushMatrix(modelMatrix);
+
+	modelMatrix.scale(0.4, 1.0, 0.4);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix = popMatrix();
+
+	modelMatrix.translate(0.0, 0.4, 0.0);
+	modelMatrix.scale(3.0, 0.2, 3.0);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
 
+
 	//Second house, different
+
 	pushMatrix(modelMatrix);		// Saving world coord system
 	
 	modelMatrix.translate(1, -1, 0.25);
