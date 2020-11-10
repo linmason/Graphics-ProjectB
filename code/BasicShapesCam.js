@@ -57,6 +57,16 @@ var g_angle01Rate = 100;
 var g_angle01min = -180;
 var g_angle01max = 180;
 
+var g_angle02 = 0;
+var g_angle02Rate = 50;
+var g_angle02min = -90;
+var g_angle02max = 90;
+
+var g_angle03 = 0;
+var g_angle03Rate = 75;
+var g_angle03min = -60;
+var g_angle03max = 60;
+
 //------------For mouse click-and-drag: -------------------------------
 var isDrag=false;		// mouse-drag: true when user holds down mouse button
 var xMclik=0.0;			// last mouse button-down position (in CVV coords)
@@ -850,6 +860,8 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 	// Drawing:
 	// Use the current ModelMatrix to transform & draw something new from our VBO:
 
+
+
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
 	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
@@ -884,6 +896,7 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 	modelMatrix.rotate(45, 1, 0, 0);
 	modelMatrix.scale(0.2, 0.5, 1.0);
 
+
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 
 	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
@@ -903,7 +916,7 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 	// SAVE world coord system;  
 	pushMatrix(modelMatrix);
 	
-	modelMatrix.translate(-1, -1, 0.5);
+	modelMatrix.translate(-1, -1, 0.25);
 	modelMatrix.rotate(90, 1, 0, 0);
 	modelMatrix.scale(1,1,1);	
 	modelMatrix.scale(0.4, 0.4, 0.4);
@@ -963,12 +976,14 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 
 	pushMatrix(modelMatrix);		// Saving world coord system
 	
-	modelMatrix.translate(1, 1, 0.5);
+	modelMatrix.translate(1, 1, 0.25);
 	modelMatrix.rotate(90, 1, 0, 0);
+
 
 	pushMatrix(modelMatrix);
 
 	modelMatrix.scale(1,1,1);
+
 	modelMatrix.scale(0.4, 0.4, 0.4);
 
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
@@ -1003,13 +1018,14 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
-	//House 2
+
+
+	//Second house, different
 
 	pushMatrix(modelMatrix);		// Saving world coord system
 	
-	modelMatrix.translate(1, -1, 0.5);
-	modelMatrix.rotate(90, 1, 0, 0);
-	modelMatrix.scale(1,1,1);	
+	modelMatrix.translate(1, -1, 0.25);
+	modelMatrix.rotate(g_angle02, 0, 1, 0);
 	modelMatrix.scale(0.4, 0.4, 0.4);
 
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
@@ -1019,12 +1035,28 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 								houseVerts.length/floatsPerVertex);	// draw this many vertices.
 
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+	//-------
+	pushMatrix(modelMatrix);
 
+	modelMatrix.translate(1, -.25, 0.25);
+	modelMatrix.rotate(g_angle02, 0, 1, 0);
+	modelMatrix.scale(0.4, -0.4, 0.4);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							houseStart/floatsPerVertex, // start at this vertex number, and
+								houseVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+
+
+
+	//------------------------4th House thing
 	pushMatrix(modelMatrix);		// Saving world coord system
 	
-	modelMatrix.translate(-1, 1, 0.5);
+	modelMatrix.translate(-1, 1, 0.25);
 	modelMatrix.rotate(90, 1, 0, 0);
-	modelMatrix.scale(1,1,1);	
 	modelMatrix.scale(0.4, 0.4, 0.4);
 
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
@@ -1036,8 +1068,44 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 
 	modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
 
+
+
+
+
+	//first arm of 4th house
+	pushMatrix(modelMatrix);
+
+	modelMatrix.translate(-1.2, 1, 0.4);
+	modelMatrix.rotate(90, 0, 0, 1);
+	modelMatrix.scale(0.2,0.5,0.2);
+	modelMatrix.rotate(g_angle03, 1, 0, 0);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
 	
+	modelMatrix = popMatrix();
+
+	//second arm of 4th house
+	pushMatrix(modelMatrix);
+
+	modelMatrix.translate(-0.8, 1, 0.4);
+	modelMatrix.rotate(90, 0, 0, 1);
+	modelMatrix.scale(0.2,-0.5,0.2);
+	modelMatrix.rotate(g_angle03, 1, 0, 0);
+
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+    							diamondStart/floatsPerVertex, // start at this vertex number, and
+								diamondVerts.length/floatsPerVertex);	// draw this many vertices.
+	
+	modelMatrix = popMatrix();
 	  
+
+
 	//===========================================================
   	pushMatrix(modelMatrix);  // SAVE world drawing coords.
   	//---------Draw Ground Plane, without spinning.
@@ -1181,6 +1249,14 @@ function animate(angle) {
 	g_angle01 =g_angle01 + (g_angle01Rate * elapsed) / 1000.0;
   if (g_angle01 > g_angle01max && g_angle01Rate >0) g_angle01Rate = -g_angle01Rate;
   if (g_angle01 < g_angle01min && g_angle01Rate <0) g_angle01Rate = -g_angle01Rate;
+
+  g_angle02 =g_angle02 + (g_angle02Rate * elapsed) / 1000.0;
+  if (g_angle02 > g_angle02max && g_angle02Rate >0) g_angle02Rate = -g_angle02Rate;
+  if (g_angle02 < g_angle02min && g_angle02Rate <0) g_angle02Rate = -g_angle02Rate;
+
+  g_angle03 =g_angle03 + (g_angle03Rate * elapsed) / 1000.0;
+  if (g_angle03 > g_angle03max && g_angle03Rate >0) g_angle03Rate = -g_angle03Rate;
+  if (g_angle03 < g_angle03min && g_angle03Rate <0) g_angle03Rate = -g_angle03Rate;
   
 	var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
 	return newAngle %= 360;
