@@ -839,16 +839,16 @@ function drawProjected(gl, n, currentAngle, modelMatrix, u_ModelMatrix, eye_posi
 	// SAVE world coord system;  
 	pushMatrix(modelMatrix);
 
-	modelMatrix.rotate(g_theta, 0, 0, 1);
+	//modelMatrix.rotate(g_theta, 0, 0, 1);
 	//quatMatrix.rotate(g_theta + 90, 0, 0, 1);
 	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);	// Quaternion-->Matrix
 	//quatMatrix.rotate(g_theta + 90, 0, 0, 1);
 
-	
+	//modelMatrix.rotate(g_theta, 0, 0, 1);
 	modelMatrix.concat(quatMatrix);	// apply that matrix.
 	//modelMatrix.rotate(g_theta + 90, 0, 0, 1);
 
-	
+	//modelMatrix.rotate(90, 1, 0, 0);
 
 
 
@@ -1392,12 +1392,15 @@ function dragQuat(xdrag, ydrag) {
 	
 	var dist = Math.sqrt(xdrag*xdrag + ydrag*ydrag);
 	// console.log('xdrag,ydrag=',xdrag.toFixed(5),ydrag.toFixed(5),'dist=',dist.toFixed(5));
-	qNew.setFromAxisAngle(-ydrag + 0.0001, xdrag + 0.0001, 0.0, dist*50.0);
+	
+	qNew.setFromAxisAngle(-ydrag*Math.sin(g_theta) + 0.0001, ydrag*Math.cos(g_theta) + 0.0001, xdrag + 0.0001, dist*50.0);
 	// (why add tiny 0.0001? To ensure we never have a zero-length rotation axis)
 							// why axis (x,y,z) = (-yMdrag,+xMdrag,0)? 
 							// -- to rotate around +x axis, drag mouse in -y direction.
-							// -- to rotate around +y axis, drag mouse in +x direction.
-							
+							// -- to rotate around +z axis, drag mouse in +x direction.
+
+	
+
 	qTmp.multiply(qNew,qTot);			// apply new rotation to current rotation. 
 	//--------------------------
 	// IMPORTANT! Why qNew*qTot instead of qTot*qNew? (Try it!)
